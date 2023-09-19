@@ -21,7 +21,12 @@ class NoteObserverTest extends TestCase
         ]);
 
         $user = User::factory()->create();
+
+        // This is the error: If using DB transaction with createOrFirst, observer does not run.
         DB::transaction(fn() => $user->notes()->createOrFirst(['notes' => 'abc']));
+
+        // Try to uncomment this one and comment the line above, test will now pass.
+        //$user->notes()->createOrFirst(['notes' => 'abc']);
 
         Queue::assertPushedOn("products", NoteCreatedJob::class);
     }
