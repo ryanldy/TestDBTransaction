@@ -15,18 +15,27 @@ class NoteObserverTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function user_created_job_is_fired(): void {
+    public function note_created_job_is_fired(): void {
         Queue::fake([
             NoteCreatedJob::class,
         ]);
 
         $user = User::factory()->create();
 
-        // This is the error: If using DB transaction with createOrFirst, observer does not run.
+        // FAILING TESTS - Try to uncomment the ff, test will fail
+        // 1. This is the error: If using DB transaction with createOrFirst, observer does not run.
         DB::transaction(fn() => $user->notes()->createOrFirst(['notes' => 'abc']));
 
-        // Try to uncomment this one and comment the line above, test will now pass.
+        // 2. As mentioned by mpyw, double-wrap in DB::transaction() fails in tests
+        //DB::transaction(fn() => DB::transaction(fn() => $user->notes()->createOrFirst(['notes' => 'abc'])));
+
+
+        // PASSING TESTS - Try to uncomment the ff, test will pass
+        // 1. Using createOrFirst() without DB::transaction
         //$user->notes()->createOrFirst(['notes' => 'abc']);
+
+        // 2. Using create() with DB::transaction
+        //DB::transaction(fn() => $user->notes()->create(['notes' => 'abc']));
 
         Queue::assertPushedOn("products", NoteCreatedJob::class);
     }
